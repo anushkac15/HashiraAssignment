@@ -1,0 +1,141 @@
+const fs = require('fs');
+
+function convertToDecimal(val, base) {
+    const b = BigInt(base);
+    let res = BigInt(0);
+    let pow = BigInt(0);
+    
+    for (let i = val.length - 1; i >= 0; i--) {
+        const ch = val[i];
+        let dig;
+        
+        if (ch >= '0' && ch <= '9') {
+            dig = BigInt(ch);
+        } else {
+            dig = BigInt(ch.charCodeAt(0) - 'a'.charCodeAt(0) + 10);
+        }
+        
+        res += dig * (b ** pow);
+        pow++;
+    }
+    
+    return res;
+}
+
+function lagrangeInterpolation(pts) {
+    const k = pts.length;
+    let sec = BigInt(0);
+    
+    for (let i = 0; i < k; i++) {
+        const xi = BigInt(pts[i].x);
+        const yi = BigInt(pts[i].y);
+        
+        let num = BigInt(1);
+        let den = BigInt(1);
+        
+        for (let j = 0; j < k; j++) {
+            if (i !== j) {
+                const xj = BigInt(pts[j].x);
+                num *= (BigInt(0) - xj);
+                den *= (xi - xj);
+            }
+        }
+        
+        sec += yi * num / den;
+    }
+    
+    return sec;
+}
+
+function getCombinations(arr, k) {
+    if (k === 1) return arr.map(x => [x]);
+    if (k === arr.length) return [arr];
+    
+    const combos = [];
+    
+    function gen(start, curr) {
+        if (curr.length === k) {
+            combos.push([...curr]);
+            return;
+        }
+        
+        for (let i = start; i <= arr.length - (k - curr.length); i++) {
+            curr.push(arr[i]);
+            gen(i + 1, curr);
+            curr.pop();
+        }
+    }
+    
+    gen(0, []);
+    return combos;
+}
+
+function parseTestCase(data) {
+    const k = data.keys.k;
+    const pts = [];
+    
+    for (let key in data) {
+        if (key !== 'keys') {
+            const x = parseInt(key);
+            const base = parseInt(data[key].base);
+            const val = data[key].value;
+            
+            const y = convertToDecimal(val, base);
+            
+            pts.push({ x: x, y: y });
+        }
+    }
+    
+    return {
+        allPts: pts,
+        k: k
+    };
+}
+
+function findSecret(filename) {
+    const data = JSON.parse(fs.readFileSync(filename, 'utf8'));
+    const { allPts, k } = parseTestCase(data);
+    
+    console.log(`\nProcessing ${filename}:`);
+    console.log(`Total points available: ${data.keys.n}, Need: ${k} points for degree ${k-1} polynomial`);
+    
+    console.log('\nAll decoded points:');
+    for (let i = 0; i < allPts.length; i++) {
+        console.log(`Point ${i + 1}: (${allPts[i].x}, ${allPts[i].y})`);
+    }
+    
+    const combos = getCombinations(allPts, k);
+    console.log(`\nTesting ${combos.length} different combinations of ${k} points:`);
+    
+    const secs = [];
+    for (let i = 0; i < Math.min(combos.length, 5); i++) {
+        const combo = combos[i];
+        const sec = lagrangeInterpolation(combo);
+        secs.push(sec);
+        
+        const ptsStr = combo.map(p => `(${p.x},${p.y})`).join(', ');
+        console.log(`Combination ${i + 1}: ${ptsStr}`);
+        console.log(`  Secret: ${sec}`);
+    }
+    
+    const allSame = secs.every(s => s === secs[0]);
+    console.log(`\nAll combinations give same secret: ${allSame ? 'YES ✓' : 'NO ✗'}`);
+    console.log(`Final Secret: ${secs[0]}`);
+    
+    return secs[0];
+}
+
+function main() {
+    console.log('Shamir\'s Secret Sharing - Testing Multiple Point Combinations');
+    console.log('='.repeat(70));
+    
+    const sec1 = findSecret('testcase1.json');
+    const sec2 = findSecret('testcase2.json');
+    
+    console.log('\n' + '='.repeat(70));
+    console.log('FINAL RESULTS:');
+    console.log(`Test Case 1 Secret: ${sec1}`);
+    console.log(`Test Case 2 Secret: ${sec2}`);
+}
+
+main(); 

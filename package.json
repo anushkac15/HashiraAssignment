@@ -1,0 +1,16 @@
+{
+  "name": "shamirs-secret-sharing",
+  "version": "1.0.0",
+  "description": "Implementation of Shamir's Secret Sharing algorithm using Lagrange interpolation",
+  "main": "shamirs_secret.js",
+  "scripts": {
+    "start": "node shamirs_secret.js",
+    "test": "node shamirs_secret.js"
+  },
+  "keywords": ["cryptography", "secret-sharing", "lagrange-interpolation", "polynomial"],
+  "author": "Avnish Porwal",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
