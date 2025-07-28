@@ -70,6 +70,27 @@ function getCombinations(arr, k) {
     return combos;
 }
 
+function getMajoritySecret(secs) {
+    const counts = new Map();
+    
+    for (const sec of secs) {
+        const str = sec.toString();
+        counts.set(str, (counts.get(str) || 0) + 1);
+    }
+    
+    let maxCount = 0;
+    let majoritySecret = secs[0];
+    
+    for (const [secStr, count] of counts.entries()) {
+        if (count > maxCount) {
+            maxCount = count;
+            majoritySecret = BigInt(secStr);
+        }
+    }
+    
+    return { secret: majoritySecret, count: maxCount, total: secs.length };
+}
+
 function parseTestCase(data) {
     const k = data.keys.k;
     const pts = [];
@@ -105,35 +126,43 @@ function findSecret(filename) {
     }
     
     const combos = getCombinations(allPts, k);
-    console.log(`\nTesting ${combos.length} different combinations of ${k} points:`);
+    console.log(`\nTesting all ${combos.length} combinations of ${k} points:`);
     
     const secs = [];
-    for (let i = 0; i < Math.min(combos.length, 5); i++) {
+    for (let i = 0; i < combos.length; i++) {
         const combo = combos[i];
         const sec = lagrangeInterpolation(combo);
         secs.push(sec);
         
-        const ptsStr = combo.map(p => `(${p.x},${p.y})`).join(', ');
-        console.log(`Combination ${i + 1}: ${ptsStr}`);
-        console.log(`  Secret: ${sec}`);
+        if (i < 5) {
+            const ptsStr = combo.map(p => `(${p.x},${p.y})`).join(', ');
+            console.log(`Combination ${i + 1}: ${ptsStr}`);
+            console.log(`  Secret: ${sec}`);
+        }
     }
     
-    const allSame = secs.every(s => s === secs[0]);
-    console.log(`\nAll combinations give same secret: ${allSame ? 'YES ✓' : 'NO ✗'}`);
-    console.log(`Final Secret: ${secs[0]}`);
+    if (combos.length > 5) {
+        console.log(`... (${combos.length - 5} more combinations tested)`);
+    }
     
-    return secs[0];
+    const { secret: majoritySecret, count, total } = getMajoritySecret(secs);
+    
+    console.log(`\nMajority Voting Results:`);
+    console.log(`Secret ${majoritySecret} appears ${count}/${total} times (${(count/total*100).toFixed(1)}%)`);
+    console.log(`Final Secret (majority): ${majoritySecret}`);
+    
+    return majoritySecret;
 }
 
 function main() {
-    console.log('Shamir\'s Secret Sharing - Testing Multiple Point Combinations');
-    console.log('='.repeat(70));
+    console.log('Shamir\'s Secret Sharing - Majority Voting Approach');
+    console.log('='.repeat(60));
     
     const sec1 = findSecret('testcase1.json');
     const sec2 = findSecret('testcase2.json');
     
-    console.log('\n' + '='.repeat(70));
-    console.log('FINAL RESULTS:');
+    console.log('\n' + '='.repeat(60));
+    console.log('FINAL RESULTS (MAJORITY VOTING):');
     console.log(`Test Case 1 Secret: ${sec1}`);
     console.log(`Test Case 2 Secret: ${sec2}`);
 }
